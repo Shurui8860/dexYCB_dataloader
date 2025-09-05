@@ -17,10 +17,45 @@ class DexYCBPickleExporter:
         out_root / side / subject / sequence / meta / 0000.pkl
     """
 
-    def __init__(self, out_root: Union[str, Path] = "dexYCB_dataset", side: str = "right", order="mano"):
-        self.out_root = Path(out_root)
-        self.side = side
-        self.order = order
+    def __init__(self, out_root: Union[str, Path] = "dexYCB_dataset", side: str = "right", order=None,
+            cfg: Optional[Union[str, Path]] = None): # path to a YAML config (optional)
+        # If a YAML config path exists, load attributes from it via from_yaml(); otherwise use inputs.
+        if cfg is not None and Path(cfg).exists():
+            tmp = DexYCBPickleExporter.from_yaml(cfg)
+            self.out_root = tmp.out_root
+            self.side = tmp.side
+            self.order = tmp.order
+            self.yml = tmp.yml
+        else:
+            self.out_root = Path(out_root)
+            self.side = side
+            self.order = order
+            self.yml = None  # optional: path to hand_splits.yaml
+
+    @staticmethod
+    def from_yaml(cfg_path: Union[str, Path]) -> "DexYCBPickleExporter":
+        cfg_path = Path(cfg_path)
+        cfg_dir = cfg_path.parent
+        cfg = yaml.safe_load(cfg_path.read_text()) or {}
+
+        out_root = cfg.get("out_root", "dexYCB_dataset")
+        side = cfg.get("side", "right")
+
+        # order can be: None | "mano"/"ho3d" | {name: ..., joints: {...}}
+        node = cfg.get("order") or cfg.get("JointConvention")
+        if isinstance(node, dict):
+            order = JointConvention(name=node.get("name", "custom"), layout=node.get("joints", {}))
+        else:
+            order = node  # keep string or None as-is
+
+        ex = DexYCBPickleExporter(out_root=out_root, side=side, order=order)
+
+        yml_val = cfg.get("yml") or cfg.get("hand_splits") or cfg.get("hand_splits_yaml")
+        if yml_val:
+            yml_path = Path(yml_val)
+            ex.yml = yml_path if yml_path.is_absolute() else (cfg_dir / yml_path).resolve()
+
+        return ex
 
     # ------------------------ path helpers ------------------------
     def _seq_key(self, seq_ref: Union[str, Path]) -> Path:
@@ -51,7 +86,6 @@ class DexYCBPickleExporter:
         return out_dir
 
     # ------------------------ IO helpers ------------------------
-
     @staticmethod
     def _save_frame_pickle(frame_dict: Dict[str, Any], out_dir: Path, frame_idx: int) -> None:
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -60,7 +94,7 @@ class DexYCBPickleExporter:
             pickle.dump(frame_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # ------------------------ core work ------------------------
-    def process_sequence(self, seq_ref: Union[str, Path]) -> None:
+    def process_sequence(self, seq_ref: Union[str, Path]):
         """
         Process a single sequence: iterate frames and dump pickles.
         `DexYCBLoader` expects 'subject/sequence' with forward slashes.
@@ -78,7 +112,7 @@ class DexYCBPickleExporter:
 
         print(f"[done] {loader_key}: {num_frames} frames -> {out_dir}")
 
-    def process_from_yaml(self, yml: Union[str, Path]) -> None:
+    def process_from_yaml(self, yml: Union[str, Path]):
         """
         Read the YAML split file and process all sequences for `self.side`.
         """

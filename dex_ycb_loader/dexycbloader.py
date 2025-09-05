@@ -7,7 +7,9 @@ import argparse
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from loader_utils import ycb_id_to_name, quaternionToAxisAngle, axisAngleToRotvec, mano_to_ho3d
+
+from dex_ycb_loader.loader_utils import MANO_TO_HO3D
+from loader_utils import JointReindexer, ycb_id_to_name, quaternionToAxisAngle, axisAngleToRotvec, HO3D
 from dex_ycb_toolkit.layers.mano_layer import MANOLayer
 
 
@@ -22,6 +24,21 @@ class DexYCBLoader:
 
     def __init__(self, sequence_name: str, order="mano"):
         # Resolve the sequence directory only (no I/O here)
+        """
+        `order` — Joint indexing convention
+        Controls how hand joint indices are arranged when read, processed, and saved.
+
+        Accepted values
+        - "mano" (str) No reindexing is applied; output remains in MANO-21 order.
+        - "ho3d" (str) Reindex from MANO-21 to HO3D-21 using the predefined `HO3D` JointConvention.
+        - JointConvention (object)
+            A custom convention with a `name` and a `joints` mapping (finger -> ordered indices).
+            Must have the same size as MANO-21. Example keys: wrist, thumb, index, middle, ring, pinky.
+
+        YAML compatibility
+        `order` may be provided in configs as either a string ("mano"/"ho3d") or as a full
+        object with `name` and `joints`:
+        """
 
         assert 'DEX_YCB_DIR' in os.environ, "environment variable 'DEX_YCB_DIR' is not set"
         _DEX_YCB_DIR = os.environ['DEX_YCB_DIR']
@@ -165,8 +182,18 @@ class DexYCBLoader:
 
         # Store as numpy for downstream use
         self.handJoints3D = joints.detach().cpu().numpy().astype(np.float64, copy=False)
-        if self.order == "ho3d":
-            self.handJoints3D = mano_to_ho3d(self.handJoints3D)
+
+        order = self.order
+        # Normalize order into a JointConvention (or identity)
+        if isinstance(order, str):
+            if order.strip().lower() == "ho3d":
+                order = HO3D  # your predefined JointConvention for HO3D
+
+        # Apply mapping only if we actually have a non-identity convention
+        if isinstance(order, JointConvention):
+            reindexer = JointReindexer(MANO21, order)
+            self.handJoints3D = reindexer.apply(self.handJoints3D)
+
         return self.handJoints3D
 
     def set_ycb_pos(self, pose_y):
@@ -248,8 +275,8 @@ class DexYCBLoader:
         return self.seq_name
 
     @property
-    def get_joint_order(self):
-        return self.order
+    def get_joint_order_name(self):
+        return (self.order).get_name
 
     def as_dict(self, frame=None):
         """
@@ -268,7 +295,7 @@ class DexYCBLoader:
                 "handJoints3D": self.getHandJoint3D,  # (T, 21, 3)
                 "side": self.get_side,
                 "num_frames": self.get_num_frames, # T
-                "order": self.get_joint_order,
+                "order": self.get_joint_order_name,
             }
         else:
             return {
@@ -282,7 +309,7 @@ class DexYCBLoader:
                 "handJoints3D": self.getHandJoint3D[frame],  # (T, 21, 3)
                 "side": self.get_side,
                 "frame": frame,
-                "order": self.get_joint_order,
+                "order": self.get_joint_order_name,
             }
 
 

@@ -1,0 +1,14 @@
+order:
+  name: "HO3D"
+  joints:
+    wrist:  [0]
+    index:  [1, 2, 3, 17]
+    middle: [4, 5, 6, 18]
+    ring:   [10, 11, 12, 19]
+    pinky:  [7, 8, 9, 20]
+    thumb:  [13, 14, 15, 16]
+
+out_root: "dexYCB_dataset"
+yml: "dexYCB_dataset/config/hand_splits.yaml"
+side: "right"
+

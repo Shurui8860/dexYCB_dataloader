@@ -24,6 +24,14 @@ class JointConvention:
     def sem_to_idx(self) -> Dict[Tuple[str, int], int]:
         return self._sem_to_idx
 
+    @property
+    def get_name(self):
+        return self.name
+
+    @property
+    def get_layout(self):
+        return self.layout
+
 
 class JointReindexer:
     """Reindex joints from `src` convention to `dst` via a permutation."""

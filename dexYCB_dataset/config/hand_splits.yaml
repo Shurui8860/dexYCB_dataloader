@@ -1,0 +1,3 @@
+data_root: /mnt/d/dex-ycb-toolkit-master/data
+left: left_side.csv
+right: right_side.csv

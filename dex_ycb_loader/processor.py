@@ -17,45 +17,55 @@ class DexYCBPickleExporter:
         out_root / side / subject / sequence / meta / 0000.pkl
     """
 
-    def __init__(self, out_root: Union[str, Path] = "dexYCB_dataset", side: str = "right", order=None,
-            cfg: Optional[Union[str, Path]] = None): # path to a YAML config (optional)
-        # If a YAML config path exists, load attributes from it via from_yaml(); otherwise use inputs.
-        if cfg is not None and Path(cfg).exists():
-            tmp = DexYCBPickleExporter.from_yaml(cfg)
-            self.out_root = tmp.out_root
-            self.side = tmp.side
-            self.order = tmp.order
-            self.yml = tmp.yml
-        else:
-            self.out_root = Path(out_root)
-            self.side = side
-            self.order = order
-            self.yml = None  # optional: path to hand_splits.yaml
+    def __init__(self, out_root: Union[str, Path] = "dexYCB_dataset", side: str = "right",order=None,
+        cfg: Optional[Union[str, Path]] = None,  # optional YAML path
+    ):
+        # Defaults from args
+        self.out_root = Path(out_root)
+        self.side: str = side
+        self.order = order
+        self.yml: Optional[Path] = None  # path to hand_splits.yaml (optional)
 
-    @staticmethod
-    def from_yaml(cfg_path: Union[str, Path]) -> "DexYCBPickleExporter":
+        # If a YAML config path exists, load and override from it
+        if cfg is not None and Path(cfg).exists():
+            self.from_yaml(cfg)
+
+    def from_yaml(self, cfg_path: Union[str, Path]):
+        """
+        Read exporter settings from YAML and set attributes in-place.
+        Accepts keys:
+          - out_root: str|path
+          - side: "right"|"left"
+          - order: "mano"|"ho3d"|{name:..., joints:{...}} | (alias) JointConvention: {...}
+          - yml | hand_splits | hand_splits_yaml: path to hand_splits.yaml
+        """
         cfg_path = Path(cfg_path)
-        cfg_dir = cfg_path.parent
+        base = cfg_path.parent
         cfg = yaml.safe_load(cfg_path.read_text()) or {}
 
-        out_root = cfg.get("out_root", "dexYCB_dataset")
-        side = cfg.get("side", "right")
+        # out_root (resolve relative to YAML)
+        out_root_val = cfg.get("out_root", self.out_root)
+        out_root_path = Path(out_root_val)
+        self.out_root = out_root_path if out_root_path.is_absolute() else (base / out_root_path).resolve()
 
-        # order can be: None | "mano"/"ho3d" | {name: ..., joints: {...}}
+        # side
+        self.side = str(cfg.get("side", self.side))
+
+        # order: None | "mano"/"ho3d" | mapping -> JointConvention
         node = cfg.get("order") or cfg.get("JointConvention")
         if isinstance(node, dict):
-            order = JointConvention(name=node.get("name", "custom"), layout=node.get("joints", {}))
-        else:
-            order = node  # keep string or None as-is
+            self.order = JointConvention(name=node.get("name", "custom"),
+                                         layout=node.get("joints", {}))
+        elif node is not None:
+            self.order = node  # keep string ("mano"/"ho3d") or None
 
-        ex = DexYCBPickleExporter(out_root=out_root, side=side, order=order)
-
+        # yml / hand_splits manifest (resolve relative to YAML)
         yml_val = cfg.get("yml") or cfg.get("hand_splits") or cfg.get("hand_splits_yaml")
         if yml_val:
             yml_path = Path(yml_val)
-            ex.yml = yml_path if yml_path.is_absolute() else (cfg_dir / yml_path).resolve()
+            self.yml = yml_path if yml_path.is_absolute() else (base / yml_path).resolve()
 
-        return ex
+        return self
 
     # ------------------------ path helpers ------------------------
     def _seq_key(self, seq_ref: Union[str, Path]) -> Path:

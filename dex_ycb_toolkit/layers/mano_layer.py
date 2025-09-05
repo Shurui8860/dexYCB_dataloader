@@ -5,7 +5,6 @@
 """Wrapper layer for manopth ManoLayer."""
 
 import torch
-
 from torch.nn import Module
 from manopth.manolayer import ManoLayer
 

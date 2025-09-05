@@ -17,9 +17,10 @@ class DexYCBPickleExporter:
         out_root / side / subject / sequence / meta / 0000.pkl
     """
 
-    def __init__(self, out_root: Union[str, Path] = "dexYCB_dataset", side: str = "right"):
+    def __init__(self, out_root: Union[str, Path] = "dexYCB_dataset", side: str = "right", order="mano"):
         self.out_root = Path(out_root)
         self.side = side
+        self.order = order
 
     # ------------------------ path helpers ------------------------
     def _seq_key(self, seq_ref: Union[str, Path]) -> Path:
@@ -59,7 +60,6 @@ class DexYCBPickleExporter:
             pickle.dump(frame_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # ------------------------ core work ------------------------
-
     def process_sequence(self, seq_ref: Union[str, Path]) -> None:
         """
         Process a single sequence: iterate frames and dump pickles.
@@ -67,7 +67,7 @@ class DexYCBPickleExporter:
         """
         key = self._seq_key(seq_ref)
         loader_key = str(key).replace(os.sep, "/")
-        loader = DexYCBLoader(loader_key)
+        loader = DexYCBLoader(loader_key, order=self.order)
 
         num_frames = loader.get_num_frames  # property in your loader
         out_dir = self.out_dir_for_sequence(seq_ref)
@@ -113,6 +113,7 @@ def main() -> None:
     exporter = DexYCBPickleExporter(
         out_root=args.out_root,
         side=args.side,
+        order="ho3d"
     )
     exporter.process_from_yaml(yml_path)
 

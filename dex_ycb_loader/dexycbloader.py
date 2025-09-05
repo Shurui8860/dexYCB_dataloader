@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from loader_utils import ycb_id_to_name, quaternionToAxisAngle, axisAngleToRotvec
+from loader_utils import ycb_id_to_name, quaternionToAxisAngle, axisAngleToRotvec, mano_to_ho3d
 from dex_ycb_toolkit.layers.mano_layer import MANOLayer
 
 
@@ -20,7 +20,7 @@ class DexYCBLoader:
     - read_pose(): reads pose.npz, stores
     """
 
-    def __init__(self, sequence_name: str):
+    def __init__(self, sequence_name: str, order="mano"):
         # Resolve the sequence directory only (no I/O here)
 
         assert 'DEX_YCB_DIR' in os.environ, "environment variable 'DEX_YCB_DIR' is not set"
@@ -29,6 +29,7 @@ class DexYCBLoader:
         self.root = Path(_DEX_YCB_DIR)
         self.seq_dir = (self.root / sequence_name).resolve()
         self.seq_name = sequence_name
+        self.order = order
 
         # Placeholders
         self.handBeta: Optional[np.ndarray] = None
@@ -164,6 +165,8 @@ class DexYCBLoader:
 
         # Store as numpy for downstream use
         self.handJoints3D = joints.detach().cpu().numpy().astype(np.float64, copy=False)
+        if self.order == "ho3d":
+            self.handJoints3D = mano_to_ho3d(self.handJoints3D)
         return self.handJoints3D
 
     def set_ycb_pos(self, pose_y):
@@ -244,6 +247,10 @@ class DexYCBLoader:
     def get_seq_path(self):
         return self.seq_name
 
+    @property
+    def get_joint_order(self):
+        return self.order
+
     def as_dict(self, frame=None):
         """
         Return a simple dict of core fields for this sequence.
@@ -261,6 +268,7 @@ class DexYCBLoader:
                 "handJoints3D": self.getHandJoint3D,  # (T, 21, 3)
                 "side": self.get_side,
                 "num_frames": self.get_num_frames, # T
+                "order": self.get_joint_order,
             }
         else:
             return {
@@ -274,6 +282,7 @@ class DexYCBLoader:
                 "handJoints3D": self.getHandJoint3D[frame],  # (T, 21, 3)
                 "side": self.get_side,
                 "frame": frame,
+                "order": self.get_joint_order,
             }
 
 

@@ -3,8 +3,8 @@ import os
 import pickle
 import argparse
 from pathlib import Path
-from typing import Any, Dict, List, Union
-
+from typing import Any, Dict, List, Union, Optional
+from loader_utils import JointConvention
 from dexycbloader import DexYCBLoader
 from type_split import HandSplitIndex
 
@@ -53,8 +53,9 @@ class DexYCBPickleExporter:
 
         # order: None | "mano"/"ho3d" | mapping -> JointConvention
         node = cfg.get("order") or cfg.get("JointConvention")
+        print(node)
         if isinstance(node, dict):
-            self.order = JointConvention(name=node.get("name", "custom"),
+            self.order = JointConvention(name=node.get("name"),
                                          layout=node.get("joints", {}))
         elif node is not None:
             self.order = node  # keep string ("mano"/"ho3d") or None
@@ -154,11 +155,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     yml_path = args.yml or DexYCBPickleExporter.default_hand_splits_yaml()
-    exporter = DexYCBPickleExporter(
-        out_root=args.out_root,
-        side=args.side,
-        order="ho3d"
-    )
+    # exporter = DexYCBPickleExporter(
+    #     out_root=args.out_root,
+    #     side=args.side,
+    #     order="ho3d"
+    # )
+    exporter = DexYCBPickleExporter(cfg="config.yaml")
     exporter.process_from_yaml(yml_path)
 
 

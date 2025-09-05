@@ -7,9 +7,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-
-from dex_ycb_loader.loader_utils import MANO_TO_HO3D
-from loader_utils import JointReindexer, ycb_id_to_name, quaternionToAxisAngle, axisAngleToRotvec, HO3D
+from loader_utils import JointReindexer, ycb_id_to_name, quaternionToAxisAngle, axisAngleToRotvec, HO3D, JointConvention
 from dex_ycb_toolkit.layers.mano_layer import MANOLayer
 
 
@@ -275,8 +273,27 @@ class DexYCBLoader:
         return self.seq_name
 
     @property
-    def get_joint_order_name(self):
-        return (self.order).get_name
+    def get_joint_order_name(self) -> str:
+        """
+        Return a normalized name for the joint order.
+        - None or "mano" -> "mano"
+        - "ho3d"         -> "ho3d"
+        - JointConvention-> its .name (fallback "custom")
+        - other types    -> TypeError
+        """
+        order = self.order
+        if order is None:
+            print(order)
+            raise TypeError(f"Unsupported order type: {type(order).__name__}")
+
+            return "mano"
+        if isinstance(order, JointConvention):
+            return order.get_name
+        if isinstance(order, str):
+            key = order.strip().lower()
+            return key  # allow custom string identifiers
+        raise TypeError(f"Unsupported order type: {type(order).__name__}")
+
 
     def as_dict(self, frame=None):
         """

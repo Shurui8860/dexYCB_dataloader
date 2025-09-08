@@ -9,6 +9,6 @@ order:
     thumb:  [13, 14, 15, 16]
 
 out_root: "dexYCB_dataset"
-yml: "dexYCB_dataset/config/hand_splits.yaml"
+hand_splits: "dexYCB_dataset/config/hand_splits.yaml"
 side: "left"
 

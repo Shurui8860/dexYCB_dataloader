@@ -7,7 +7,9 @@ import argparse
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from loader_utils import JointReindexer, ycb_id_to_name, quaternionToAxisAngle, axisAngleToRotvec, HO3D, JointConvention
+from loader_utils import (JointReindexer, ycb_id_to_name,
+                          quaternionToAxisAngle, axisAngleToRotvec,
+                          MANO21, HO3D, JointConvention)
 from dex_ycb_toolkit.layers.mano_layer import MANOLayer
 
 

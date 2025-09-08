@@ -83,7 +83,7 @@ class DexYCBPickleExporter:
         return self
 
     # ------------------------ path helpers ------------------------
-    def out_dir(self, seq_ref: Union[str, Path]) -> Path:
+    def out_dir(self, seq_ref: Union[str, Path], side: str) -> Path:
         """
         Build (and create) the output directory for a given sequence.
         """
@@ -99,14 +99,14 @@ class DexYCBPickleExporter:
 
         # Compose: out_root/<side>/<subject>/<sequence>/meta/
         # `self.side` typically "left" or "right"
-        out_dir = self.out_root / self.side / key / "meta"
+        out_dir = self.out_root / side / key / "meta"
 
         # Ensure the directory exists (create parents as needed)
         out_dir.mkdir(parents=True, exist_ok=True)
         return out_dir
 
     # ------------------------ core work ------------------------
-    def process(self, seq_ref: Union[str, Path]):
+    def process(self, seq_ref: Union[str, Path], side: str) -> Path:
         """
         Process one sequence:
         - Build a loader key with forward slashes (DexYCBLoader requirement).
@@ -123,7 +123,7 @@ class DexYCBPickleExporter:
         num_frames = loader.get_num_frames
 
         # Destination directory for this sequence’s per-frame pickles
-        out_dir = self.out_dir(seq_ref)
+        out_dir = self.out_dir(seq_ref, side)
 
         for frame_idx in range(num_frames):
             # Build a per-frame dictionary (must contain only pickle-able objects)
@@ -162,7 +162,7 @@ class DexYCBPickleExporter:
             for seq_ref in files:
                 # `seq_ref` is typically the sequence directory (e.g., .../<SEQ_NAME>/)
                 # and will be consumed by `process`.
-                self.process(seq_ref)
+                self.process(seq_ref, side)
 
 
 if __name__ == "__main__":

@@ -173,43 +173,84 @@ right_paths = HandSplitIndex.read_side_paths("dexYCB_dataset/config/hand_splits.
 
 ### 3) Export per-frame pickles for all sequences
 
-`process_seq.py` iterates over every sequence listed in `hand_splits.yaml` and writes:
+The exporter now runs from **`dex_ycb_loader/processor.py`** and reads its settings from a **`config.yaml`** file (same folder as the script). It writes per-frame pickles to:
 
 ```
 dexYCB_dataset/<side>/<subject>/<sequence>/meta/0000.pkl, 0001.pkl, ...
 ```
 
-#### Basic usage (right hand, HO3D joint order)
+(Behavior implemented in `processor.py`.)&#x20;
+
+#### Basic usage (config-driven)
+
+1. Edit `config.yaml` (example below), then run:
 
 ```bash
-# process everything in the manifest for the RIGHT hand
-python process_seq.py \
-  --yml dexYCB_dataset/config/hand_splits.yaml \
-  --out_root dexYCB_dataset \
-  --side right
+python dex_ycb_loader/processor.py
 ```
 
-* The CLI accepts `--yml`, `--out_root`, and `--side {right,left}`.&#x20;
-* In the current script, joint order is set to **HO3D** internally (`order="ho3d"`) when constructing the exporter; that order is passed down to `DexYCBLoader`. &#x20;
+**Example `config.yaml`:**
 
-#### Process the left-hand split (if needed)
+```yaml
+# Where to put the pickles (absolute or project-relative)
+out_root: dexYCB_dataset
 
-```bash
-python process_seq.py \
-  --yml dexYCB_dataset/config/hand_splits.yaml \
-  --out_root dexYCB_dataset \
-  --side left
+# Which split to process: "right", "left", or "both"
+side: right
+
+# Joint order passed to DexYCBLoader: "ho3d" (default) or "mano"
+order: 
+    name: "HO3D"
+    joints:
+      wrist:  [0]
+      index:  [1, 2, 3, 17]
+      middle: [4, 5, 6, 18]
+      ring:   [10, 11, 12, 19]
+      pinky:  [7, 8, 9, 20]
+      thumb:  [13, 14, 15, 16]
+
+# Path to your hand-split manifest (absolute or project-relative)
+hand_splits: dexYCB_dataset/config/hand_splits.yaml
 ```
+
+What it does:
+
+* Preserves the canonical `subject/sequence` layout and writes zero-padded `0000.pkl, 0001.pkl, …`.&#x20;
+* If `side: both`, it processes left **and** right splits in one run.&#x20;
+* If `hand_splits` is omitted, it falls back to `project_root/dexYCB_dataset/config/hand_splits.yaml`.&#x20;
+
+#### Process the left-hand split (or both)
+
+Set in `config.yaml`:
+
+```yaml
+side: left    # or: both
+```
+
+…and rerun `python dex_ycb_loader/processor.py`.&#x20;
 
 #### (Optional) Choose a different joint order
 
-The provided CLI does **not** expose `--order`. If you need `order="mano"` (or another), either:
+Set in `config.yaml`:
 
-* Edit the `order="ho3d"` line in `process_seq.py`’s `main()` to your desired value, or
-* Import and call the exporter directly:
+```yaml
+order: mano   # default is ho3d
+```
+
+This value is passed directly to `DexYCBLoader`.&#x20;
+
+#### Programmatic use (override config in code)
 
 ```python
-from process_seq import DexYCBPickleExporter
-exporter = DexYCBPickleExporter(out_root="dexYCB_dataset", side="right", order="mano")
-exporter.process_from_yaml("dexYCB_dataset/config/hand_splits.yaml")
+from dex_ycb_loader.processor import DexYCBPickleExporter
+
+exporter = DexYCBPickleExporter(
+    out_root="dexYCB_dataset",
+    side="right",                 # "left" or "both"
+    order="mano",                 # or "ho3d"
+    yml="dexYCB_dataset/config/hand_splits.yaml"
+)
+exporter.process_all()
 ```
+
+This preserves `subject/sequence` and writes per-frame pickles under `<out_root>/<side>/.../meta/*.pkl`.&#x20;

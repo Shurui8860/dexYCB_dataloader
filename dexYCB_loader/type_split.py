@@ -162,10 +162,12 @@ class HandSplitIndex:
         if side_norm not in ("left", "right"):
             raise ValueError("side must be 'left' or 'right'")
 
+        # Resolve the YAML path to an absolute path and ensure it exists.
         yaml_path = Path(index_yaml).resolve()
         if not yaml_path.exists():
             raise FileNotFoundError(f"YAML not found: {yaml_path}")
 
+        # Parse the manifest; must include the dataset root and the CSV pointer for the chosen side.
         manifest = yaml.safe_load(yaml_path.read_text(encoding=encoding))
         if "data_root" not in manifest or side_norm not in manifest:
             raise KeyError("YAML must contain 'data_root' and a CSV entry for the requested side")

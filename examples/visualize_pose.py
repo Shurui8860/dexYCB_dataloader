@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from manopth.manolayer import ManoLayer
 
-from dex_ycb_toolkit.factory import get_dataset
+from dexYCB_toolkit.factory import get_dataset
 
 
 def create_scene(sample, obj_file):

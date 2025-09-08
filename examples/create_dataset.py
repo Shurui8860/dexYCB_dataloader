@@ -6,7 +6,7 @@
 
 import json
 
-from dex_ycb_toolkit.factory import get_dataset
+from dexYCB_toolkit.factory import get_dataset
 
 
 def main():

@@ -7,7 +7,7 @@
 import argparse
 import os
 
-from dex_ycb_toolkit.bop_eval import BOPEvaluator
+from dexYCB_toolkit.bop_eval import BOPEvaluator
 
 
 def parse_args():

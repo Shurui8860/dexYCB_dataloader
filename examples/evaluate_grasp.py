@@ -7,7 +7,7 @@
 import argparse
 import os
 
-from dex_ycb_toolkit.grasp_eval import GraspEvaluator
+from dexYCB_toolkit.grasp_eval import GraspEvaluator
 
 
 def parse_args():

@@ -83,67 +83,88 @@ class DexYCBPickleExporter:
         return self
 
     # ------------------------ path helpers ------------------------
-    @staticmethod
-    def _seq_key(seq_ref: Union[str, Path]) -> Path:
-        """
-        Turn an arbitrary seq_ref (absolute or relative) into the key used by:
-          - DexYCBLoader (expects 'subject/sequence')
-          - Output directory layout
-        """
-        p = Path(seq_ref)
-        parts = p.parts
-
-        if len(parts) >= 2:
-            # Keep `subject/sequence`
-            key = Path(parts[-2]) / parts[-1]
-        else:
-            # Only the final sequence name
-            key = Path(p.name)
-
-        return key
-
     def out_dir(self, seq_ref: Union[str, Path]) -> Path:
         """
-        Ensure and return: out_root/<side>/<subject>/<sequence>/meta/ (or sequence-only)
+        Build (and create) the output directory for a given sequence.
         """
-        key = self._seq_key(seq_ref)
+        p = Path(seq_ref)
+        parts = p.parts  # tuple of path components
+
+        if len(parts) >= 2:
+            # Preserve the canonical DexYCB structure: "<subject>/<sequence>"
+            key = Path(parts[-2]) / parts[-1]
+        else:
+            # Only a single component was provided; use it as the sequence name
+            key = Path(p.name)
+
+        # Compose: out_root/<side>/<subject>/<sequence>/meta/
+        # `self.side` typically "left" or "right"
         out_dir = self.out_root / self.side / key / "meta"
+
+        # Ensure the directory exists (create parents as needed)
         out_dir.mkdir(parents=True, exist_ok=True)
         return out_dir
 
     # ------------------------ core work ------------------------
-    def process_sequence(self, seq_ref: Union[str, Path]):
+    def process(self, seq_ref: Union[str, Path]):
         """
-        Process a single sequence: iterate frames and dump pickles.
-        `DexYCBLoader` expects 'subject/sequence' with forward slashes.
+        Process one sequence:
+        - Build a loader key with forward slashes (DexYCBLoader requirement).
+        - Iterate all frames.
+        - Serialize each frame's dict to `<out_dir>/<frame_idx>.pkl`.
         """
-        key = self._seq_key(seq_ref)
-        loader_key = str(key).replace(os.sep, "/")
+        # Normalize the sequence reference into your canonical path/key
+        loader_key = str(seq_ref).replace(os.sep, "/")
+
+        # Construct the per-sequence data loader (order comes from your config)
         loader = DexYCBLoader(loader_key, order=self.order)
 
-        num_frames = loader.get_num_frames  # property in your loader
+        # Total number of frames in this sequence (property on the loader)
+        num_frames = loader.get_num_frames
+
+        # Destination directory for this sequence’s per-frame pickles
         out_dir = self.out_dir(seq_ref)
 
         for frame_idx in range(num_frames):
-            frame_dict = loader.as_dict(frame_idx)  # per-frame dictionary
+            # Build a per-frame dictionary (must contain only pickle-able objects)
+            frame_dict = loader.as_dict(frame_idx)
 
+            # Ensure output directory exists (can be hoisted outside loop for micro-perf)
             out_dir.mkdir(parents=True, exist_ok=True)
+
+            # Write as zero-padded file names: 0000.pkl, 0001.pkl, ...
             out_file = out_dir / f"{frame_idx:04d}.pkl"
             with out_file.open("wb") as f:
                 pickle.dump(frame_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+        # Simple progress/logging line
         print(f"[done] {loader_key}: {num_frames} frames -> {out_dir}")
 
-    def process_from_yaml(self):
+    def process_all(self):
         """
-        Read the YAML split file and process all sequences for `self.side`.
-        """
-        print(self.yml)
-        files: List[str] = HandSplitIndex.read_side_paths(self.yml, side=self.side, absolute=True)
-        for seq_ref in files:
-            self.process_sequence(seq_ref)
+        Load the split file at `self.yml` and process sequences for the configured side(s).
+        Notes
+        `self.side` can be "left", "right", or "both".
+        `self.yml` should be a YAML produced by HandSplitIndex, with top-level keys
+    """
+        # Normalize to a list of sides to iterate over.
+        # If "both", handle left then right; otherwise just the requested side.
+        sides = ["left", "right"] if self.side == "both" else [self.side]
+
+        for side in sides:
+            # Pull the sequence list for this side from the YAML.
+            # `files` is a list of absolute paths to sequences (or sequence roots).
+            files: List[str] = HandSplitIndex.read_side_paths(
+                self.yml, side=side, absolute=True
+            )
+
+            # Process each sequence one-by-one using the class's per-sequence routine.
+            for seq_ref in files:
+                # `seq_ref` is typically the sequence directory (e.g., .../<SEQ_NAME>/)
+                # and will be consumed by `process`.
+                self.process(seq_ref)
 
 
 if __name__ == "__main__":
     exporter = DexYCBPickleExporter(cfg="config.yaml")
-    exporter.process_from_yaml()
+    exporter.process_all()

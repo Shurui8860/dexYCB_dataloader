@@ -12,7 +12,7 @@ import os
 import numpy as np
 import cv2
 
-from dex_ycb_toolkit.sequence_loader import SequenceLoader
+from dexYCB_toolkit.sequence_loader import SequenceLoader
 
 _YCB_COLORS = {
      1: (255,   0,   0),  # 002_master_chef_can

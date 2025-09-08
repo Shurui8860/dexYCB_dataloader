@@ -7,7 +7,7 @@
 import argparse
 import os
 
-from dex_ycb_toolkit.hpe_eval import HPEEvaluator
+from dexYCB_toolkit.hpe_eval import HPEEvaluator
 
 
 def parse_args():

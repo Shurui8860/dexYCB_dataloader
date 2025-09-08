@@ -23,8 +23,8 @@ from scipy.spatial.distance import cdist
 from scipy.spatial import cKDTree
 from tabulate import tabulate
 
-from dex_ycb_toolkit.factory import get_dataset
-from dex_ycb_toolkit.logging import get_logger
+from dexYCB_toolkit.factory import get_dataset
+from dexYCB_toolkit.logging import get_logger
 
 bop_toolkit_root = os.path.join(os.path.dirname(__file__), "..", "bop_toolkit")
 sys.path.append(bop_toolkit_root)

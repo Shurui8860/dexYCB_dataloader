@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from tabulate import tabulate
 
-from dex_ycb_toolkit.grasp_eval import GraspEvaluator
+from dexYCB_toolkit.grasp_eval import GraspEvaluator
 
 res_dir = os.path.join(os.path.dirname(__file__), "..", "results")
 

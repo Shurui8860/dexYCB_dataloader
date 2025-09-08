@@ -7,7 +7,7 @@
 import argparse
 import os
 
-from dex_ycb_toolkit.coco_eval import COCOEvaluator
+from dexYCB_toolkit.coco_eval import COCOEvaluator
 
 
 def parse_args():

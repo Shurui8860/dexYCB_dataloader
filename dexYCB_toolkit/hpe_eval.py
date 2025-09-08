@@ -12,8 +12,8 @@ import pickle
 
 from tabulate import tabulate
 
-from dex_ycb_toolkit.factory import get_dataset
-from dex_ycb_toolkit.logging import get_logger
+from dexYCB_toolkit.factory import get_dataset
+from dexYCB_toolkit.logging import get_logger
 
 freihand_root = os.path.join(os.path.dirname(__file__), "..", "freihand")
 sys.path.append(freihand_root)

@@ -183,12 +183,10 @@ def quaternionToAxisAngle(P: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     Vectorized quaternion -> (axis, angle).
 
     Parameters
-    ----------
     P : (..., 4) array-like
         Quaternions in (e0, e1, e2, e3) with scalar first.
 
     Returns
-    -------
     axes : (..., 3) np.ndarray
     angles : (...) np.ndarray
     """

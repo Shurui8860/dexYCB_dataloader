@@ -7,8 +7,8 @@
 import argparse
 import pyglet
 
-from dex_ycb_toolkit.sequence_loader import SequenceLoader
-from dex_ycb_toolkit.window import Window
+from dexYCB_toolkit.sequence_loader import SequenceLoader
+from dexYCB_toolkit.window import Window
 
 
 def parse_args():

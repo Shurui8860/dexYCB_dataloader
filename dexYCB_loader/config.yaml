@@ -10,5 +10,5 @@ order:
 
 out_root: "dexYCB_dataset"
 hand_splits: "dexYCB_dataset/config/hand_splits.yaml"
-side: "both"
+side: "right"
 

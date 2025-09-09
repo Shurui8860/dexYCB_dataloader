@@ -154,7 +154,7 @@ class DexYCBPickleExporter:
         for side in sides:
             # Pull the sequence list for this side from the YAML.
             # `files` is a list of absolute paths to sequences (or sequence roots).
-            files: List[str] = HandSplitIndex.read_side_paths(
+            files: List[str] = HandSplitIndex.read_paths(
                 self.yml, side=side, absolute=True
             )
 

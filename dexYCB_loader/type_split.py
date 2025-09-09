@@ -23,9 +23,9 @@ class HandSplitIndex:
                  encoding: str = "utf-8") -> None:
         if data_root is None:
             assert "DEX_YCB_DIR" in os.environ, "environment variable 'DEX_YCB_DIR' is not set"
-            data_root = os.environ["DEX_YCB_DIR"]
+            self.root: Path = Path(os.environ["DEX_YCB_DIR"]).resolve()
+            assert self.root.exists(), f"'{data_root}' does not exist"
 
-        self.root: Path = Path(data_root).resolve()
         self.out_dir: Path = Path(out_dir)
         self.encoding = encoding
 
@@ -146,8 +146,8 @@ class HandSplitIndex:
 
     # ------------------------- readers -------------------------
     @staticmethod
-    def read_side_paths(index_yaml: Union[str, Path], side: str = "right",
-                        absolute: bool = True, encoding: str = "utf-8") -> List[Path]:
+    def read_paths(index_yaml: Union[str, Path], side: str = "right",
+                   absolute: bool = True, encoding: str = "utf-8") -> List[Path]:
         """
         Load a YAML manifest and return the list of sequence paths for one side.
 
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     print(f"[ok] wrote manifest: {yml}")
 
     # Example: read right-hand absolute paths back
-    right_paths = HandSplitIndex.read_side_paths(yml, side="right", absolute=True)
+    right_paths = HandSplitIndex.read_paths(yml, side="right", absolute=True)
     print(f"[ok] right count: {len(right_paths)}")
     for p in right_paths[:3]:
         print("  R:", p)

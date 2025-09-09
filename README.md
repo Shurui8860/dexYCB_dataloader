@@ -160,8 +160,9 @@ python type_split.py
 
 ```python
 from type_split import HandSplitIndex
-right_paths = HandSplitIndex.read_side_paths("dexYCB_dataset/config/hand_splits.yaml",
-                                             side="right", absolute=True)
+
+right_paths = HandSplitIndex.read_paths("dexYCB_dataset/config/hand_splits.yaml",
+                                        side="right", absolute=True)
 ```
 
 

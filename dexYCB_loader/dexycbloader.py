@@ -52,17 +52,17 @@ class DexYCBLoader:
         self.handBeta: Optional[np.ndarray] = None
 
         self.objName = None
+        self.objRot = None
+        self.objTrans = None
+
+        self.side = None
         self.handPose = None
         self.handTrans = None
-        self.handJoints3D = None
-        self.objTrans = None
-        self.objRot = None
-        self.side = None
-
-        self.grasp_idx: Optional[int] = None
-        self.ycb_ids: Optional[int] = None
         self.ycb_names = None
         self.grasp_ind = None
+        self.handJoints3D = None
+        self.ycb_ids: Optional[int] = None
+        self.grasp_idx: Optional[int] = None
 
         # Perform reads
         self.read_meta()
@@ -302,6 +302,9 @@ class DexYCBLoader:
         Return a simple dict of core fields for this sequence.
         Uses the existing property getters (full sequences).
         """
+        if self.get_ycb_name == "035_power_drill":
+            for _ in range(3):
+                print(self.seq_name)
         if frame is None:
             return {
                 "seqName": self.seq_name,

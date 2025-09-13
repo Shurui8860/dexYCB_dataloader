@@ -8,7 +8,7 @@ import re
 import cv2
 from pathlib import Path
 from typing import Optional, Tuple, List, Sequence
-from dexYCB_loader.find_objs import read_sequence
+from find_objs import read_sequence
 
 _NUM = re.compile(r"(\d+)")
 

@@ -1,6 +1,7 @@
+import csv
+import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple
-import csv
 from dexycbloader import DexYCBLoader
 from type_split import HandSplitIndex
 
@@ -73,12 +74,40 @@ def read_sequence(obj_name: str, out_dir: Path = Path("dexYCB_dataset/objs")) ->
     print(f"[info] {len(sequences)} sequences loaded for {obj_name}")
     return sequences
 
-if __name__ == "__main__":
-    # yml = Path("dexYCB_dataset/config/hand_splits.yaml")
-    # finder = ObjFinder(yml, side="right")
-    # results = finder.run()
-    # print(f"[done] Processed {len(results)} objects")
 
-    # Example: read back one object’s sequences directly
-    obj = "010_potted_meat_can"
-    seqs = read_sequence(obj)
+def main():
+    parser = argparse.ArgumentParser(
+        description="DexYCB/HO3D object–sequence helper."
+    )
+    parser.add_argument(
+        "--yml",
+        type=Path,
+        default=Path("dexYCB_dataset/config/hand_splits.yaml"),
+        help="Path to hand_splits.yaml (used when processing all objects).",
+    )
+    parser.add_argument(
+        "--side",
+        choices=["left", "right"],
+        default="right",
+        help="Hand side for processing all objects.",
+    )
+    parser.add_argument(
+        "--obj",
+        type=str,
+        help="If set, print sequences for this object "
+             "(e.g., 010_potted_meat_can). If omitted, process all objects.",
+    )
+    args = parser.parse_args()
+
+    if args.obj:
+        seqs = read_sequence(args.obj)
+        for s in seqs:
+            print(s)
+        print(f"[done] {len(seqs)} sequences for {args.obj}")
+    else:
+        finder = ObjFinder(args.yml, side=args.side)
+        results = finder.run()
+        print(f"[done] Processed {len(results)} objects")
+
+if __name__ == "__main__":
+    main()

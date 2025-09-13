@@ -11,6 +11,49 @@ Yu-Wei Chao, Wei Yang, Yu Xiang, Pavlo Molchanov, Ankur Handa, Jonathan Tremblay
 Yashraj S. Narang, Karl Van Wyk, Umar Iqbal, Stan Birchfield, Jan Kautz, Dieter Fox  
 CVPR 2021 — [[paper]](https://dex-ycb.github.io/assets/chao_cvpr2021.pdf) • [[supp]](https://dex-ycb.github.io/assets/chao_cvpr2021_supp.pdf) • [[video]](https://youtu.be/Q4wyBaZeBw0) • [[arXiv]](https://arxiv.org/abs/2104.04631) • [[project site]](https://dex-ycb.github.io)
 
+
+## Installation
+**Tested:** Python 3.7 on Linux.
+
+**Good practice:** use an isolated conda environment so packages from different projects don’t interfere.
+
+Install the dex-ycb-toolkit package and dependencies:
+
+``` bash
+    # Install dex-ycb-toolkit
+    pip install -e .
+
+    # Install bop_toolkit dependencies
+    cd bop_toolkit
+    pip install -r requirements.txt
+    cd ..
+
+    # Install manopth
+    cd manopth
+    pip install -e .
+    cd ..
+  ```
+
+ Set the environment variable for dataset path:
+
+```bash
+    export DEX_YCB_DIR=/path/to/dex-ycb
+```
+
+`$DEX_YCB_DIR` should be a folder with the following structure:
+
+```Shell
+    ├── 20200709-subject-01/
+    ├── 20200813-subject-02/
+    └── ...
+  ```
+```Shell
+    cd manopth
+    unzip mano_v1_2.zip
+    cd mano
+    ln -s ../mano_v1_2/models models
+    cd ../..
+```
 ## DexYCB Dataset Structure
 ### Directory Layout
 ```
@@ -255,3 +298,56 @@ exporter.process_all()
 ```
 
 This preserves `subject/sequence` and writes per-frame pickles under `<out_root>/<side>/.../meta/*.pkl`.&#x20;
+
+### Per-Object Sequence Index (ObjFinder)
+
+Index sequences by **object name** and write one CSV per object under `dexYCB_dataset/objs/<object>/<object>.csv`.
+
+**CSV schema**
+
+```csv
+subject,sequence
+20200709-subject-01,20200709_141754
+...
+```
+
+**Output layout**
+
+```
+dexYCB_dataset/
+  objs/
+    006_mustard_bottle/006_mustard_bottle.csv
+    010_potted_meat_can/010_potted_meat_can.csv
+    ...
+```
+
+### Build the index
+
+```bash
+# Build per-object CSVs for the right-hand split
+python dexYCB_loader/find_objs.py --yml dexYCB_dataset/config/hand_splits.yaml --side right
+
+# Inspect sequences of one object (requires the CSV already exists)
+python dexYCB_loader/find_objs.py --obj 010_potted_meat_can
+```
+
+**Python**
+
+```python
+from pathlib import Path
+from obj_finder import ObjFinder
+
+yml = Path("dexYCB_dataset/config/hand_splits.yaml")
+finder = ObjFinder(yml_path=yml, side="right")
+results = finder.run()  # dict: {obj_name: ["subject/sequence", ...]}
+print(f"[done] indexed {len(results)} objects")
+```
+
+### Read sequences for a given object
+
+```python
+from obj_finder import read_sequence
+
+seqs = read_sequence("010_potted_meat_can")  # -> ["20200709-subject-01/20200709_141754", ...]
+print(seqs[:5])
+```

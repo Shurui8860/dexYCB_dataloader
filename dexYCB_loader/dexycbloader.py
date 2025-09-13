@@ -285,7 +285,6 @@ class DexYCBLoader:
         """
         order = self.order
         if order is None:
-            print(order)
             raise TypeError(f"Unsupported order type: {type(order).__name__}")
 
             return "mano"
@@ -302,9 +301,6 @@ class DexYCBLoader:
         Return a simple dict of core fields for this sequence.
         Uses the existing property getters (full sequences).
         """
-        if self.get_ycb_name == "035_power_drill":
-            for _ in range(3):
-                print(self.seq_name)
         if frame is None:
             return {
                 "seqName": self.seq_name,

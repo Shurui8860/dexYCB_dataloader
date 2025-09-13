@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
 OOP image-sequence → video builder.
-
 Requires:
   pip install opencv-python
 """
-
-from pathlib import Path
-from typing import Optional, Tuple, List
 import re
 import cv2
+from pathlib import Path
+from typing import Optional, Tuple, List, Sequence
+from dexYCB_loader.find_objs import read_sequence
 
 _NUM = re.compile(r"(\d+)")
 
@@ -104,17 +103,67 @@ class ImageSequenceToVideo:
         writer.release()
         return self.output
 
+    @classmethod
+    def build_many(cls, input_dirs: Sequence[Path], out_root: Optional[Path] = None, fps: int = 15,
+        size: Optional[Tuple[int, int]] = None, pattern: str = "*.jpg", codec: Optional[str] = None,
+        stride: int = 1) -> List[Path]:
+        """
+        Build videos for multiple input folders of frames.
+        Parameters
+        input_dirs : list of Path
+            List of frame folders (each becomes one video).
+        out_root : Path | None
+            Root output directory. If None, video is placed in each folder’s parent.
+        fps, size, pattern, codec, stride
+            Same as for single build.
 
----- Example usage ----
+        Returns
+        List[Path]
+            List of output video paths.
+        """
+        outputs: List[Path] = []
+        for inp in input_dirs:
+            name = inp.name
+            sub  = inp.parent.name
+            inp = Path(inp) / "836212060125"
+            if out_root:
+                out_path = Path(out_root) / sub / name
+                out_path.mkdir(parents=True, exist_ok=True)
+                out_path = Path(out_path) / f"{name}.mp4"
+            else:
+                out_path = inp.parent / f"{name}.mp4"
+            video = cls(input_dir=inp, output=out_path, fps=fps, size=size,
+                        pattern=pattern, codec=codec,stride=stride).build()
+            outputs.append(video)
+            print(f"[info] Built video: {video}")
+        return outputs
+
+
+# make sure this is at the TOP LEVEL, no indentation under class
 if __name__ == "__main__":
-    maker = ImageSequenceToVideo(
-        input_dir="/path/to/frames",
-        output="/path/to/out/clip.mp4",  # or None to auto-name
-        fps=30,
-        size=None,            # infer from first frame
-        pattern="color_*.jpg",
-        codec=None,           # infer from output suffix
-        stride=1,             # use every frame
-    )
-    out_path = maker.build()
-    print("Saved:", out_path)
+    obj = '006_mustard_bottle'
+
+    try:
+        # 1. Load sequences (subject/sequence) for this object
+        seqs = read_sequence(obj)
+
+        # 2. Convert to frame directories
+        frame_root = Path("data_with_images")  # root where images are stored
+        input_dirs = [
+            frame_root / subj / seq
+            for subj, seq in (s.split("/") for s in seqs)
+        ]
+
+        # 3. Build videos for all sequences
+        video_root = Path("videos") / obj
+        videos = ImageSequenceToVideo.build_many(
+            input_dirs=input_dirs,
+            out_root=video_root,
+            fps=15,
+            pattern="color_*.jpg",
+        )
+
+        print(f"[done] Built {len(videos)} videos for {obj} → {video_root}")
+
+    except FileNotFoundError as e:
+        print(f"[error] {e}")
